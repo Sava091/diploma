@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Main form{% endblock %}
+
+{% block content %}
+<div class="form-group">
+  <label for="sel1">Select matrix:</label>
+  <select class="form-control" id="sel1" onchange="selectImage(this)">
+    {% for s in samples %}
+      <option>{{s}}</option>
+    {% endfor %}
+  </select>
+</div>
+<img id="heatmap" src="/api/heatmap/1/" class="rounded" alt="matrix_heatmap">
+{% endblock %}
+
+{% block js_content %}
+<script>
+function selectImage(sel){
+ const img = document.getElementById("heatmap");
+ const n = sel.value;
+ console.log(n);
+ img.setAttribute("src", `/api/heatmap/${n}/`);
+}
+</script>
+{% endblock %}

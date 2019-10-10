@@ -1,0 +1,5 @@
+django
+numpy
+Pillow
+pandas
+seaborn
