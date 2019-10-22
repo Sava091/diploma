@@ -18,7 +18,7 @@ class Command(BaseCommand):
         matrix_list = list()
         for fn in os.listdir(path):
             if fn.endswith(ext):
-                # print(os.path.join(path, fn))
+                print(os.path.join(path, fn))
                 if ext == ".rr" :
                     matrix_rr = load_rr_matrix(os.path.join(path,fn))
                 elif ext == ".beat" :

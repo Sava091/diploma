@@ -1,16 +1,11 @@
 import numpy as np
 import os
-from sklearn.decomposition import PCA
-from sklearn.preprocessing import StandardScaler
-from sklearn.cluster import KMeans
 
 
-R_MIN = 0.2 #200 miliseconds - minimal RR
-R_MAX = 1.9 #2000 miliseconds - maximal RR
+T_MIN = 200 #200 miliseconds - minimal RR
+T_MAX = 2000 #2000 miliseconds - maximal RR
 N_CELLS= 60 #quantity of cells
 N_RANGES = 10 #quantity of ranges
-N_CLUSTERS = 3 #quantity of clusters
-CLUSTER_COLOURS = ['green', 'yellow', 'red']
 
 
 def rr_reader(filename):
@@ -44,16 +39,14 @@ def beat_reader(filename):
     fp.close()
     return array_rr
 
-
-def ratio_to_cell(t1, t2):
-    r = max(100, t1) / max(100, t2)
-    return int(round((r - R_MIN)/(R_MAX-R_MIN) * N_CELLS))
+def ms_to_cell(t):
+    return int(round((t - T_MIN)/T_MAX * N_CELLS))
 
 
 def fill_rr_matrix(array_rr):
     rr_matrix = np.zeros((N_CELLS, N_CELLS), dtype=int)
-    for x,y,z in zip(array_rr[:-2], array_rr[1:-1], array_rr[2:]):
-        i,j = ratio_to_cell(x,y), ratio_to_cell(y,z)
+    for x,y in zip(array_rr[:-1], array_rr[1:]):
+        i,j = ms_to_cell(x), ms_to_cell(y)
         if i < 0 or j < 0 or i >= N_CELLS or j >= N_CELLS:
             continue
         rr_matrix[i,j] += 1
@@ -103,72 +96,3 @@ def load_matrix_list(path):
 def get_matrix_list_count(path):
     matrix_list = load_matrix_list(path)
     return matrix_list.shape[0]
-
-
-def snail(m):
-    w, h = m.shape
-    w2, h2 = w//2, h//2
-    x, y = w2+1, h2+1
-    s = list()
-    for i in range(w2):
-        if i == 0:
-            s.append(m[x,y])
-            continue
-        for k in range(i):
-            s.append(m[x+k,y])
-        for l in range(-i,i):
-            s.append(m[x+i,y+l])
-        for k in reversed(range(-i,i)):
-            s.append(m[x+k,y+i])
-        for l in reversed(range(-i,i)):
-            s.append(m[x-i,y+l])
-        for k in range(-i,0):
-            s.append(m[x+k,y-i])
-    return np.array(s)
-
-
-def snail_map(w=N_CELLS, h=N_CELLS):
-    s = list()
-    y1,x1 = 0, 0
-    y2,x2 = h-1, w-1
-    while x1 < x2:
-        for x in range(x1,x2+1):
-            s.append((x,y1))
-        for y in range(y1+1,y2):
-            s.append((x2,y))
-        for x in range(x2,x1,-1):
-            s.append((x,y2))
-        for y in range(y2,y1,-1):
-            s.append((x1,y))
-        x1 += 1
-        x2 -= 1
-        y1 += 1
-        y2 -= 1
-    return s
-
-
-def reshape(m):
-    return m.ravel()
-
-
-def get_x_for_pca(matrix_list):
-    s_map = snail_map(N_CELLS, N_CELLS)
-    # print(s_map)
-    return np.array([[m[i, j] for i, j in s_map] for m in matrix_list])
-
-
-def pca_transform(x, n_components =2):
-    x_norm = StandardScaler().fit_transform(x)
-    pca = PCA(n_components=n_components)
-    pc_x = pca.fit_transform(x_norm)
-    return pc_x
-
-
-def clustering(pc_x, n_clusters=N_CLUSTERS):
-    model = KMeans(n_clusters=N_CLUSTERS)
-    model.fit(pc_x)
-    return model
-
-
-def predict_cluster(model, pc_x):
-    return model.predict(pc_x)
