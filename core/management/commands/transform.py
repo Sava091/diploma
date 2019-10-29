@@ -1,9 +1,8 @@
 import os
-import numpy as np
 from django.core.management.base import BaseCommand
-from core.tools import load_matrix_list, pca_transform, get_x_for_pca, clustering, predict_cluster, CLUSTER_COLOURS
+from core.tools import load_matrix_list, pca_transform, get_x_for_pca, clustering, \
+    predict_cluster, CLUSTER_COLOURS, load_model, MODEL_FN, make_group_map
 from django.conf import settings
-from PIL import Image
 import matplotlib.pyplot as plt
 
 
@@ -17,10 +16,13 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         path = os.path.join(settings.BASE_DIR, 'samples')
-        matrix_list = load_matrix_list(path)
-        x_for_pca = get_x_for_pca(matrix_list)
-        pc_x = pca_transform(x_for_pca)
-        model = clustering(pc_x)
+        # matrix_list = load_matrix_list(path)
+        # x_for_pca = get_x_for_pca(matrix_list)
+        # pc_x = pca_transform(x_for_pca)
+        # print(pc_x)
+        pc_x = make_group_map((-30, 130), (-40, 130))
+        model = load_model(path, MODEL_FN)
+
         groups = predict_cluster(model, pc_x)
         # print(groups)
         colours = [CLUSTER_COLOURS[g] for g in groups]
@@ -33,3 +35,6 @@ class Command(BaseCommand):
         figure = ax.get_figure()
         figure.savefig('static/images/KMeans_Cluster.png', dpi=200)
         # plt.show()
+
+
+

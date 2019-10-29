@@ -3,5 +3,6 @@ from . import views
 
 
 urlpatterns = [
-        path('', views.HomeView.as_view()),
+        path('heatmap/', views.view_heatmap),
+        path('', views.view_upload_start),
     ]

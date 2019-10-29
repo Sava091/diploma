@@ -1,0 +1,9 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Мапа активності серця{% endblock %}
+
+{% block content %}
+<h2>Мапа активності серця паціента</h2>
+<img id="heatmap" src="/api/heatmap/patient/?heatmap_fn={{heatmap_fn}}" class="rounded" alt="matrix_heatmap">
+{% endblock %}

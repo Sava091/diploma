@@ -1,6 +1,7 @@
 import os
 from django.core.management.base import BaseCommand
-from core.tools import load_rr_matrix, store_matrix_list, load_beat_matrix
+from core.tools import load_rr_matrix, store_matrix_list, load_beat_matrix, get_x_for_pca, \
+    pca_transform, clustering, store_model, MODEL_FN
 
 
 class Command(BaseCommand):
@@ -27,4 +28,8 @@ class Command(BaseCommand):
                     raise Exception("Unknown type")
                 matrix_list.append(matrix_rr)
         store_matrix_list(matrix_list, path)
+        x_for_pca = get_x_for_pca(matrix_list)
+        pc_x = pca_transform(x_for_pca)
+        model = clustering(pc_x)
+        store_model(model, path, MODEL_FN)
         self.stdout.write("import finished successfully")

@@ -1,28 +1,45 @@
 {% extends 'base.html' %}
 {% load static %}
 
-{% block title %}Main form{% endblock %}
+{% block title %}Перевірте зону ризику вашого паціента{% endblock %}
 
 {% block content %}
-<img id="kmeans" src="/static/images/KMeans_Cluster.png" class="rounded" alt="cluster" width="800px">
-<div class="form-group">
-  <label for="sel1">Select matrix:</label>
-  <select class="form-control" id="sel1" onchange="selectImage(this)">
-    {% for s in samples %}
-      <option>{{s}}</option>
-    {% endfor %}
-  </select>
+<h2>Перевірте зону ризику вашого паціента</h2>
+<p>Для користувачів системи ДіаКард</p>
+<div class="row">
+  <div class="col-6">
+    <br/>
+    <h3>Що для цього потрібно зробити:</h3>
+    <br/>
+    <ul>
+      <li>Експортувати RR-інтервали з дослідження системою ДіаКард</li>
+      <li>Завантажити експортований файл</li>
+      <li>Отримати оцінку зони ризику сформованою штучним інтелектом</li>
+    </ul>
+  </div>
+  <div class="col-6">
+    <div class="card">
+      <div class="card-header">Завантаження файлу з RR-інтервалами</div>
+      <div class="card-body">
+        <form id="upload-form" method="post" class="form" name="uploadForm" enctype="multipart/form-data"> {% csrf_token %}
+          <div class="form-group">
+            <input name="inputBeats" type="file" class="form-control" id="input-beats" accept=".beat" placeholder="Вибріть файл з RR-інтервалами (*.beat)"
+                   required autocomplete="off" data-validation-required-message="Обовз'язково виберіть файл з RR-інтервалами">
+            <p class="help-block text-danger"></p>
+          </div>
+          <p class="msg_error">{{info}}</p>
+          <div class="form-group text-right">
+            <button type="submit" class="btn btn-primary color">Завантажити &raquo;</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
 </div>
-<img id="heatmap" src="/api/heatmap/1/" class="rounded" alt="matrix_heatmap">
 {% endblock %}
 
 {% block js_content %}
 <script>
-function selectImage(sel){
- const img = document.getElementById("heatmap");
- const n = sel.value;
- console.log(n);
- img.setAttribute("src", `/api/heatmap/${n}/`);
-}
+
 </script>
 {% endblock %}

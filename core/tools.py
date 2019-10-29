@@ -1,5 +1,7 @@
 import numpy as np
 import os
+import tempfile
+import pickle
 from sklearn.decomposition import PCA
 from sklearn.preprocessing import StandardScaler
 from sklearn.cluster import KMeans
@@ -9,8 +11,22 @@ R_MIN = 0.2 #200 miliseconds - minimal RR
 R_MAX = 1.9 #2000 miliseconds - maximal RR
 N_CELLS= 60 #quantity of cells
 N_RANGES = 10 #quantity of ranges
-N_CLUSTERS = 3 #quantity of clusters
-CLUSTER_COLOURS = ['green', 'yellow', 'red']
+N_CLUSTERS = 5 #quantity of clusters
+MODEL_FN = 'clustering_model.npy' #
+CLUSTER_COLOURS = ['green', 'yellow', 'orange', 'brown', 'red']
+
+
+def save_bin(bin, fn):
+    fp = open(fn,'w')
+    fp.write(bin)
+    fp.close()
+
+
+def save_temp(content, dir, prefix, suffix):
+    tf = tempfile.NamedTemporaryFile(delete=False, dir=dir, prefix=prefix, suffix=suffix)
+    tf.write(content)
+    tf.flush()
+    return os.path.basename(tf.name)
 
 
 def rr_reader(filename):
@@ -95,9 +111,29 @@ def store_matrix_list(matrix_list, path):
     np.save(os.path.join(path, 'rr_matrixes.npy'), np.array(matrix_list))
 
 
+def store_heatmap(rr_matrix, path, fn):
+    np.save(os.path.join(path, fn), rr_matrix)
+
+
+def store_model(model, path, fn):
+    fp = open(os.path.join(path, fn), 'wb')
+    pickle.dump(model, fp)
+
+
+def load_model(path, fn):
+    fp = open(os.path.join(path, fn), 'rb')
+    model = pickle.load(fp)
+    return model
+
+
 def load_matrix_list(path):
     matrix_list = np.load(os.path.join(path, 'rr_matrixes.npy'))
     return matrix_list
+
+
+def load_heatmap(path, fn):
+    rr_matrix = np.load(os.path.join(path, fn))
+    return rr_matrix
 
 
 def get_matrix_list_count(path):
@@ -165,10 +201,14 @@ def pca_transform(x, n_components =2):
 
 
 def clustering(pc_x, n_clusters=N_CLUSTERS):
-    model = KMeans(n_clusters=N_CLUSTERS)
+    model = KMeans(n_clusters=n_clusters)
     model.fit(pc_x)
     return model
 
 
 def predict_cluster(model, pc_x):
     return model.predict(pc_x)
+
+
+def make_group_map(range1, range2):
+    return np.array([(pc1, pc2) for pc1 in range(range1[0], range1[1]) for pc2 in range(range2[0], range2[1])])
