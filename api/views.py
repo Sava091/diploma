@@ -1,9 +1,6 @@
 from django.http import HttpResponse, HttpResponseNotFound
-from PIL import Image
-from io import BytesIO
-import seaborn as sn
 import os
-from core.tools import load_matrix_list, load_heatmap
+from core.tools import load_matrix_list, load_heatmap, get_heatmap_image
 
 
 def get_image_response(img, format="png"):
@@ -19,13 +16,7 @@ def view_heatmap_image(request, n):
     if n < 1 or n > matrix_list.shape[0]:
         return HttpResponseNotFound()
     norm_matrix_rr = matrix_list[n-1]
-    svm = sn.heatmap(norm_matrix_rr, cmap='coolwarm', center=0)  # linecolor='white', linewidths=1,
-    svm.invert_yaxis()
-    figure = svm.get_figure()
-    figure_data = BytesIO()
-    figure.savefig(figure_data, dpi=120)
-    figure.clf()
-    img = Image.open(figure_data)
+    img = get_heatmap_image(norm_matrix_rr)
     return get_image_response(img)
 
 
@@ -36,11 +27,5 @@ def view_patient_heatmap_image(request):
     if not os.path.isfile(ext_fn):
         return HttpResponseNotFound()
     norm_matrix_rr = load_heatmap(path, fn)
-    svm = sn.heatmap(norm_matrix_rr, cmap='coolwarm', center=0)  # linecolor='white', linewidths=1,
-    svm.invert_yaxis()
-    figure = svm.get_figure()
-    figure_data = BytesIO()
-    figure.savefig(figure_data, dpi=120)
-    figure.clf()
-    img = Image.open(figure_data)
+    img = get_heatmap_image(norm_matrix_rr)
     return get_image_response(img)

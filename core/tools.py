@@ -2,9 +2,14 @@ import numpy as np
 import os
 import tempfile
 import pickle
+import seaborn as sn
+import pandas as pd
+from PIL import Image
+from io import BytesIO
 from sklearn.decomposition import PCA
 from sklearn.preprocessing import StandardScaler
 from sklearn.cluster import KMeans
+from sklearn.metrics import silhouette_score
 
 
 R_MIN = 0.2 #200 miliseconds - minimal RR
@@ -210,5 +215,42 @@ def predict_cluster(model, pc_x):
     return model.predict(pc_x)
 
 
+def group_metric(pc_x, groups):
+    return silhouette_score(pc_x, groups)
+
+
 def make_group_map(range1, range2):
     return np.array([(pc1, pc2) for pc1 in range(range1[0], range1[1]) for pc2 in range(range2[0], range2[1])])
+
+
+def get_heatmap_image(norm_matrix_rr):
+    svm = sn.heatmap(norm_matrix_rr, cmap='coolwarm', center=0, xticklabels=False, yticklabels=False)  # linecolor='white', linewidths=1,
+    svm.invert_yaxis()
+    figure = svm.get_figure()
+    figure_data = BytesIO()
+    figure.savefig(figure_data, dpi=120)
+    figure.clf()
+    img = Image.open(figure_data)
+    return img
+
+
+def get_metric_image(metrix):
+    groups = np.array([g for g, m in metrix])
+    ms = np.array([m for g, m in metrix])
+    df = pd.DataFrame(ms, columns=['metrics'])
+    df.index = groups
+    # print(df.head(10))
+
+    svm = sn.barplot(x=groups, y=ms)
+    svm.set_xlabel('N groups')
+    svm.set_ylabel('metric value')
+    svm.set_title('Silhouette metric')
+    svm.grid(True)
+    figure = svm.get_figure()
+    figure_data = BytesIO()
+    figure.savefig(figure_data, dpi=120)
+    figure.clf()
+    img = Image.open(figure_data)
+    return img
+
+
