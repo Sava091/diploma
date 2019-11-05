@@ -23,7 +23,7 @@
       <div class="card-body">
         <form id="upload-form" method="post" class="form" name="uploadForm" enctype="multipart/form-data"> {% csrf_token %}
           <div class="form-group">
-            <input name="inputBeats" type="file" class="form-control" id="input-beats" accept=".beat" placeholder="Вибріть файл з RR-інтервалами (*.beat)"
+            <input name="inputBeats" type="file" class="form-control h-field" id="input-beats" accept=".beat" placeholder="Вибріть файл з RR-інтервалами (*.beat)"
                    required autocomplete="off" data-validation-required-message="Обовз'язково виберіть файл з RR-інтервалами">
             <p class="help-block text-danger"></p>
           </div>

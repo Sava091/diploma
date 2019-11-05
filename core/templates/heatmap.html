@@ -4,6 +4,26 @@
 {% block title %}Мапа активності серця{% endblock %}
 
 {% block content %}
-<h2>Мапа активності серця паціента</h2>
-<img id="heatmap" src="/api/heatmap/patient/?heatmap_fn={{heatmap_fn}}" class="rounded" alt="matrix_heatmap">
+<div class="row">
+    <div class="col-6">
+        <div class="card">
+        <div class="card-header">
+            <h2>Мапа активності серця паціента</h2>
+        </div>
+        <div class="card-body">
+            <img id="heatmap" src="/api/heatmap/patient/?rr_fn={{rr_fn}}" class="rounded" alt="heatmap of heart activity">
+        </div>
+    </div>
+    </div>
+    <div class="col-6">
+        <div class="card">
+        <div class="card-header">
+            <h2>Зона ризику паціента</h2>
+        </div>
+        <div class="card-body">
+            <img id="clustermap" src="/api/clustermap/patient/?rr_fn={{rr_fn}}" alt="cluster map">
+        </div>
+    </div>
+    </div>
+</div>
 {% endblock %}

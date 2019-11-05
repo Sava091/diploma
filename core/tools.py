@@ -16,9 +16,10 @@ R_MIN = 0.2 #200 miliseconds - minimal RR
 R_MAX = 1.9 #2000 miliseconds - maximal RR
 N_CELLS= 60 #quantity of cells
 N_RANGES = 10 #quantity of ranges
-N_CLUSTERS = 5 #quantity of clusters
+N_CLUSTERS = 7 #quantity of clusters
 MODEL_FN = 'clustering_model.npy' #
-CLUSTER_COLOURS = ['green', 'yellow', 'orange', 'brown', 'red']
+CLUSTER_COLOURS = ['green', 'yellow', 'orange', 'brown', 'red', 'aqua', 'purple']
+METRIC_GROUP_MAX = 10 # max groups
 
 
 def save_bin(bin, fn):
@@ -224,8 +225,18 @@ def make_group_map(range1, range2):
 
 
 def get_heatmap_image(norm_matrix_rr):
+    # df_matrix = pd.DataFrame(norm_matrix_rr, columns=np.linspace(R_MIN, R_MAX, N_CELLS))
+    scale_rr = np.arange(0.25, R_MAX, 0.25)
+    # scale_rr_rev = np.arange(R_MAX, 0.25, -0.25)
     svm = sn.heatmap(norm_matrix_rr, cmap='coolwarm', center=0, xticklabels=False, yticklabels=False)  # linecolor='white', linewidths=1,
     svm.invert_yaxis()
+    ax2 = svm.twiny()
+    ax2.xaxis.set_ticks_position('bottom')
+    ax2.set_xlim(R_MIN, R_MAX)
+    ax2.set_xticks(scale_rr)
+    # ax3 = svm.twiny()
+    # ax3.set_ylim(R_MIN, R_MAX)
+    # ax3.set_yticks(scale_rr)
     figure = svm.get_figure()
     figure_data = BytesIO()
     figure.savefig(figure_data, dpi=120)
@@ -240,7 +251,6 @@ def get_metric_image(metrix):
     df = pd.DataFrame(ms, columns=['metrics'])
     df.index = groups
     # print(df.head(10))
-
     svm = sn.barplot(x=groups, y=ms)
     svm.set_xlabel('N groups')
     svm.set_ylabel('metric value')
@@ -254,3 +264,22 @@ def get_metric_image(metrix):
     return img
 
 
+def get_clustermap_image(path):
+    pc_x = make_group_map((-30, 130), (-40, 130))
+    model = load_model(path, MODEL_FN)
+    groups = predict_cluster(model, pc_x)
+    colours = [CLUSTER_COLOURS[g] for g in groups]
+    x,y = pc_x[:, 0], pc_x[:, 1]
+    df = pd.DataFrame(np.array((x, y, colours)).transpose(), columns=['pc1', 'pc2', 'colours'])
+    print(df.head())
+    ax = sn.scatterplot(data=df, x='pc1', y='pc2', hue='colours', alpha=0.5)
+    ax.grid()
+    ax.set_xlabel('principal component 1')
+    ax.set_ylabel('principal component 2')
+    ax.set_title('Cluster map')
+    figure = ax.get_figure()
+    figure_data = BytesIO()
+    figure.savefig(figure_data, dpi=120)
+    figure.clf()
+    img = Image.open(figure_data)
+    return img

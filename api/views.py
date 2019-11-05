@@ -1,6 +1,6 @@
 from django.http import HttpResponse, HttpResponseNotFound
 import os
-from core.tools import load_matrix_list, load_heatmap, get_heatmap_image
+from core.tools import load_matrix_list, load_heatmap, get_heatmap_image, get_clustermap_image
 
 
 def get_image_response(img, format="png"):
@@ -22,10 +22,22 @@ def view_heatmap_image(request, n):
 
 def view_patient_heatmap_image(request):
     path = os.path.abspath('upload')
-    fn = request.GET.get('heatmap_fn') + '.npy'
+    fn = request.GET.get('rr_fn') + '.npy'
     ext_fn = os.path.join(path, fn)
     if not os.path.isfile(ext_fn):
         return HttpResponseNotFound()
     norm_matrix_rr = load_heatmap(path, fn)
     img = get_heatmap_image(norm_matrix_rr)
+    return get_image_response(img)
+
+
+def view_patient_clustermap_image(request):
+    path = os.path.abspath('upload')
+    model_path = os.path.abspath('samples')
+    fn = request.GET.get('rr_fn') + '.npy'
+    ext_fn = os.path.join(path, fn)
+    if not os.path.isfile(ext_fn):
+        return HttpResponseNotFound()
+    norm_matrix_rr = load_heatmap(path, fn)
+    img = get_clustermap_image(model_path)
     return get_image_response(img)

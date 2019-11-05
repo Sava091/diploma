@@ -53,4 +53,4 @@ def view_heatmap(request):
     beat_fn = request.COOKIES.get('heatmap_file')
     if beat_fn is None:
         return HttpResponseRedirect('/')
-    return render(request, 'heatmap.html', {'heatmap_fn': beat_fn})
+    return render(request, 'heatmap.html', {'rr_fn': beat_fn})

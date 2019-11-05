@@ -2,7 +2,7 @@ import os
 from django.core.management.base import BaseCommand
 from core.tools import load_matrix_list, pca_transform, get_x_for_pca, \
     predict_cluster, CLUSTER_COLOURS, load_model, MODEL_FN, make_group_map, N_CLUSTERS, \
-    get_heatmap_image, clustering, group_metric, get_metric_image
+    get_heatmap_image, clustering, group_metric, get_metric_image, METRIC_GROUP_MAX
 from django.conf import settings
 import numpy as np
 import pandas as pd
@@ -74,7 +74,7 @@ class Command(BaseCommand):
         matrix_list = load_matrix_list(path)
         x_for_pca = get_x_for_pca(matrix_list)
         pc_x = pca_transform(x_for_pca)
-        num_clusters = np.arange(2,11)
+        num_clusters = np.arange(2, METRIC_GROUP_MAX+1)
         results = []
         for n_groups in num_clusters:
             model = clustering(pc_x, n_groups)

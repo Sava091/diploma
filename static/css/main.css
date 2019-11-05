@@ -1,0 +1,11 @@
+.h-field {
+    height:  32pt;
+}
+
+#heatmap {
+    max-width: 510px;
+}
+
+#clustermap {
+    max-width: 510px;
+}
