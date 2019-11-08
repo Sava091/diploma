@@ -39,5 +39,5 @@ def view_patient_clustermap_image(request):
     if not os.path.isfile(ext_fn):
         return HttpResponseNotFound()
     norm_matrix_rr = load_heatmap(path, fn)
-    img = get_clustermap_image(model_path)
+    img = get_clustermap_image(model_path, norm_matrix_rr)
     return get_image_response(img)

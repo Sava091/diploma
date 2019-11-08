@@ -4,6 +4,7 @@ import tempfile
 import pickle
 import seaborn as sn
 import pandas as pd
+from matplotlib import pyplot as plt
 from PIL import Image
 from io import BytesIO
 from sklearn.decomposition import PCA
@@ -17,7 +18,9 @@ R_MAX = 1.9 #2000 miliseconds - maximal RR
 N_CELLS= 60 #quantity of cells
 N_RANGES = 10 #quantity of ranges
 N_CLUSTERS = 7 #quantity of clusters
-MODEL_FN = 'clustering_model.npy' #
+CLUSTER_FN = 'clustering_model.npy' # model
+PCA_FN = 'pca_model.npy' # model
+SCALER_FN = 'scaler_model.npy' # model
 CLUSTER_COLOURS = ['green', 'yellow', 'orange', 'brown', 'red', 'aqua', 'purple']
 METRIC_GROUP_MAX = 10 # max groups
 
@@ -199,10 +202,18 @@ def get_x_for_pca(matrix_list):
     return np.array([[m[i, j] for i, j in s_map] for m in matrix_list])
 
 
-def pca_transform(x, n_components =2):
-    x_norm = StandardScaler().fit_transform(x)
+def pca_fit(x, n_components =2):
+    scaler = StandardScaler()
+    scaler.fit(x)
+    x_norm = scaler.transform(x)
     pca = PCA(n_components=n_components)
-    pc_x = pca.fit_transform(x_norm)
+    pca.fit(x_norm)
+    return pca, scaler
+
+
+def pca_transform(scaler, pca, x):
+    x_norm = scaler.transform(x)
+    pc_x = pca.transform(x_norm)
     return pc_x
 
 
@@ -264,19 +275,26 @@ def get_metric_image(metrix):
     return img
 
 
-def get_clustermap_image(path):
+def get_clustermap_image(path, norm_matrix_rr):
     pc_x = make_group_map((-30, 130), (-40, 130))
-    model = load_model(path, MODEL_FN)
-    groups = predict_cluster(model, pc_x)
+    cluster = load_model(path, CLUSTER_FN)
+    pca = load_model(path, PCA_FN)
+    scaler = load_model(path, SCALER_FN)
+    groups = predict_cluster(cluster, pc_x)
+    x_point = get_x_for_pca([norm_matrix_rr])
+    pc_point = pca_transform(scaler, pca, x_point)
     colours = [CLUSTER_COLOURS[g] for g in groups]
     x,y = pc_x[:, 0], pc_x[:, 1]
-    df = pd.DataFrame(np.array((x, y, colours)).transpose(), columns=['pc1', 'pc2', 'colours'])
-    print(df.head())
-    ax = sn.scatterplot(data=df, x='pc1', y='pc2', hue='colours', alpha=0.5)
+    # df = pd.DataFrame(np.array((x, y, colours)).transpose(), columns=['pc1', 'pc2', 'colours'])
+    # print(df.head())
+    ax = plt.gca()
+    ax.scatter(x=x, y=y, s=60, alpha=0.5, c=colours)
+    ax.scatter(x=pc_point[:,0], y=pc_point[:,1], s=80, alpha=1, c=['black'])
+    print(pc_point)
     ax.grid()
-    ax.set_xlabel('principal component 1')
-    ax.set_ylabel('principal component 2')
-    ax.set_title('Cluster map')
+    plt.xlabel('principal component 1')
+    plt.ylabel('principal component 2')
+    plt.title('Cluster map')
     figure = ax.get_figure()
     figure_data = BytesIO()
     figure.savefig(figure_data, dpi=120)
