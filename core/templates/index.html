@@ -3,6 +3,23 @@
 
 {% block title %}Перевірте зону ризику вашого паціента{% endblock %}
 
+{% block modal %}
+<script type="text/javascript">
+function execSubmit()
+{
+var v = document.getElementById("modal_wait");
+v.style.display = "block";
+return true;
+};
+</script>
+<div id="modal_wait" class="modal_dialog">
+<div>
+<h2>Будь-ласка зачекайте ...</h2>
+<h3>Йде передача файлу на сервер та його аналіз ...</h3>
+</div>
+</div>
+{% endblock %}
+
 {% block content %}
 <h2>Перевірте зону ризику вашого паціента</h2>
 <p>Для користувачів системи ДіаКард</p>
@@ -21,7 +38,7 @@
     <div class="card">
       <div class="card-header">Завантаження файлу з RR-інтервалами</div>
       <div class="card-body">
-        <form id="upload-form" method="post" class="form" name="uploadForm" enctype="multipart/form-data"> {% csrf_token %}
+        <form id="upload-form" method="post" class="form" name="uploadForm" enctype="multipart/form-data" onsubmit="execSubmit()"> {% csrf_token %}
           <div class="form-group">
             <input name="inputBeats" type="file" class="form-control h-field" id="input-beats" accept=".beat" placeholder="Вибріть файл з RR-інтервалами (*.beat)"
                    required autocomplete="off" data-validation-required-message="Обовз'язково виберіть файл з RR-інтервалами">

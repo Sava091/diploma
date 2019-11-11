@@ -4,6 +4,7 @@ import tempfile
 import pickle
 import seaborn as sn
 import pandas as pd
+import codecs
 from matplotlib import pyplot as plt
 from PIL import Image
 from io import BytesIO
@@ -53,7 +54,7 @@ def rr_reader(filename):
 
 
 def beat_reader(filename):
-    fp = open(filename,'r')
+    fp = codecs.open(filename,'r', 'WINDOWS-1251')
     array_rr = []
     for _ in range(2):
         fp.readline()

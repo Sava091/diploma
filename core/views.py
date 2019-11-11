@@ -1,5 +1,6 @@
 import os
 import json
+import io
 from django.shortcuts import render
 from django.http import HttpResponseRedirect, HttpResponse, FileResponse
 from django.views.generic.base import TemplateView
@@ -64,9 +65,13 @@ def view_heatmap(request):
         return HttpResponseRedirect('/')
     annotate_level = request.POST.get('annotateLevel')
     annotate_text = request.POST.get('annotateText')
+    if annotate_level is None:
+        annotate_level = '-1'
+    if annotate_text is None:
+        annotate_text = ''
     path = os.path.abspath('upload')
     annotate_fn = os.path.join(path, beat_fn + '.annotation.json')
-    if (annotate_text is not None) and (annotate_level is not None):
+    if (annotate_text != '') and (annotate_level != '-1'):
         annotate_data = dict(level=annotate_level, text=annotate_text)
         with open(annotate_fn, 'w') as fp:
             json.dump(annotate_data, fp, indent=4)
@@ -87,8 +92,8 @@ def view_patient_report(request):
     path = os.path.abspath('upload')
     pdf_fn = os.path.join(path, beat_fn + '.report.pdf')
     with open(pdf_fn, 'w+b') as pdf:
-        r = render('report.html', {})
-        pisa_status = pisa.CreatePDF(r.content, dest=pdf)
+        r = render(request, 'report.html', {})
+        pisa_status = pisa.CreatePDF(io.StringIO(r.content.decode('utf-8')), dest=pdf, encoding='utf-8')
     if pisa_status.err:
         return HttpResponse(status=500)
     s = open(pdf_fn, 'rb')
