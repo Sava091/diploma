@@ -36,15 +36,15 @@ return true;
   </div>
   <div class="col-6">
     <div class="card">
-      <div class="card-header">Завантаження файлу з RR-інтервалами</div>
+      <div class="card-header">Завантаження файлу з RR-інтервалами (*.beat)</div>
       <div class="card-body">
         <form id="upload-form" method="post" class="form" name="uploadForm" enctype="multipart/form-data" onsubmit="execSubmit()"> {% csrf_token %}
           <div class="form-group">
             <input name="inputBeats" type="file" class="form-control h-field" id="input-beats" accept=".beat" placeholder="Вибріть файл з RR-інтервалами (*.beat)"
-                   required autocomplete="off" data-validation-required-message="Обовз'язково виберіть файл з RR-інтервалами">
+                   required autocomplete="off" data-validation-required-message="Обовз'язково виберіть файл з RR-інтервалами (*.beat)">
             <p class="help-block text-danger"></p>
           </div>
-          <p class="msg_error">{{info}}</p>
+          <p class="text-danger">{{info}}</p>
           <div class="form-group text-right">
             <button type="submit" class="btn btn-primary color">Завантажити &raquo;</button>
           </div>

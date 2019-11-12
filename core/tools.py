@@ -56,14 +56,18 @@ def rr_reader(filename):
 def beat_reader(filename):
     fp = codecs.open(filename,'r', 'WINDOWS-1251')
     array_rr = []
-    for _ in range(2):
-        fp.readline()
+    s1 = fp.readline()
+    s2 = fp.readline()
+    if s1.count('N') == 0:
+        return array_rr
+    if s2.count('---') < 3:
+        return array_rr
     for line in fp:
         items = line.split("\t")
         if len(items) < 5:
             continue
         t = items[1]
-        if t != 'X':
+        if t in ['N', 'S', 'V']:
             r = int(items[3])
             if r > 100:
                 array_rr.append(r)
@@ -109,8 +113,9 @@ def load_rr_matrix(fn):
     return log_matrix_rr
 
 
-def load_beat_matrix(fn):
+def load_beat_matrix(fn, min_beats=1000):
     array_rr = beat_reader(fn)
+    if len(array_rr) < min_beats: return None
     matrix_rr = fill_rr_matrix(array_rr)
     log_matrix_rr = log_rr_matrix(matrix_rr)
     # norm_matrix_rr = norm_rr_matrix(log_matrix_rr)

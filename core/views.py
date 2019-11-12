@@ -1,6 +1,5 @@
 import os
 import json
-import io
 from django.shortcuts import render
 from django.http import HttpResponseRedirect, HttpResponse, FileResponse
 from django.views.generic.base import TemplateView
@@ -36,9 +35,9 @@ def view_upload_start(request):
 def upload_transfer(request):
     data = request.FILES.get('inputBeats')
     if data is None:
-        return HttpResponseRedirect('/?info = Beat File was not assigned')
+        return HttpResponseRedirect('/?info=Beat File was not assigned')
     if data.size == 0:
-        return HttpResponseRedirect('/?info = Beat File damaged')
+        return HttpResponseRedirect('/?info=Beat File damaged')
 
     dir = os.path.join(settings.BASE_DIR, 'upload')
     temp_fn = save_temp(data.read(), dir, 'ecg_','.beat')
@@ -46,6 +45,8 @@ def upload_transfer(request):
     fn_heat = b + '.heatmap'
     ext_fn = os.path.join(dir, temp_fn)
     norm_matrix_rr = load_beat_matrix(ext_fn)
+    if norm_matrix_rr is None:
+        return HttpResponseRedirect('/?info=Beat Data insufficiently to analyses(<1000 beats)')
     store_heatmap(norm_matrix_rr, dir, fn_heat)
 
     img = get_heatmap_image(norm_matrix_rr)
@@ -91,9 +92,19 @@ def view_patient_report(request):
         return HttpResponseRedirect('/')
     path = os.path.abspath('upload')
     pdf_fn = os.path.join(path, beat_fn + '.report.pdf')
+    annotate_fn = os.path.join(path, beat_fn + '.annotation.json')
+    has_annotation = os.path.isfile(annotate_fn)
+    annotate_level = '-1'
+    annotate_text = ''
+    if has_annotation:
+        with open(annotate_fn, 'r') as fp:
+            annotate_data = json.load(fp)
+            annotate_level = annotate_data.get('level')
+            annotate_text = annotate_data.get('text')
     with open(pdf_fn, 'w+b') as pdf:
-        r = render(request, 'report.html', {})
-        pisa_status = pisa.CreatePDF(io.StringIO(r.content.decode('utf-8')), dest=pdf, encoding='utf-8')
+        r = render(request, 'report.html', {'base': settings.BASE_DIR, 'rr_fn': beat_fn,
+                                            'annotationLevel': annotate_level, 'annotationText': annotate_text})
+        pisa_status = pisa.CreatePDF(r.content, dest=pdf, encoding='utf-8')
     if pisa_status.err:
         return HttpResponse(status=500)
     s = open(pdf_fn, 'rb')

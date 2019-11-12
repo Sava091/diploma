@@ -5,21 +5,38 @@
   <title>Звіт степені ризику пацієнта</title>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <link rel="stylesheet" href="{% static 'css/report.css' %}">
-  <style type="text/css">@page {
+  <style type="text/css">
+@page {
     size: A4; margin: 1cm;
 }
 
 @font-face {
-    font-family: Arial;
-    src: url(/static/font/ArialRegular.ttf);
+    font-family: "Arial";
+    src: url({{base}}/static/font/arial.ttf);
 }
 
 body {
-    font-family: Arial;
-}</style>
+    font-family: "Arial";
+}
+</style>
 </head>
     <body>
         <h1>Звіт степені ризику пацієнта</h1>
+        <h2>Мапа активності серця паціента</h2>
+        <img width="650px" src="{{base}}/static/images/{{rr_fn}}.png" class="rounded" alt="heatmap of heart activity">
+        <h2>Карта зон ризику паціента</h2>
+        <img width="650px" src="{{base}}/static/images/{{rr_fn}}.clustermap.png" alt="cluster map">
+        <h2>Аннотація до запису ЕКГ</h2>
+        <h3>Cтепінь ризику:
+        {% if annotationLevel == '0' %} Дуже низька {% endif %}
+        {% if annotationLevel == '1' %} Низька {% endif %}
+        {% if annotationLevel == '2' %} Майже середня" {% endif %}
+        {% if annotationLevel == '3' %} Середня {% endif %}
+        {% if annotationLevel == '4' %} Майже велика {% endif %}
+        {% if annotationLevel == '5' %} Велика {% endif %}
+        {% if annotationLevel == '6' %} Дуже велика {% endif %}
+        </h3>
+        <h3>Стан пацієнта: </h3>
+        <p>{{annotationText}}</p>
     </body>
 </html>
