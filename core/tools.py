@@ -296,7 +296,7 @@ def get_clustermap_image(path, norm_matrix_rr):
     ax = plt.gca()
     ax.scatter(x=x, y=y, s=60, alpha=0.5, c=colours)
     ax.scatter(x=pc_point[:,0], y=pc_point[:,1], s=80, alpha=1, c=['black'])
-    print(pc_point)
+    # print(pc_point)
     ax.grid()
     plt.xlabel('principal component 1')
     plt.ylabel('principal component 2')

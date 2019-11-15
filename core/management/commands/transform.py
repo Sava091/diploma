@@ -41,7 +41,7 @@ class Command(BaseCommand):
             # print(dfi.head())
             dfm = dfi[dfi['DI'] == dfi['DI'].min()]
             n_best = dfm.index[0]
-            print(n_best)
+            # print(n_best)
             norm_matrix_rr = matrix_list[n_best]
             img = get_heatmap_image(norm_matrix_rr)
             img.save('static/images/KMeans_group{}.png'.format(i))
@@ -80,7 +80,7 @@ class Command(BaseCommand):
             model = clustering(pc_x, n_groups)
             groups = predict_cluster(model, pc_x)
             results.append([n_groups, group_metric(pc_x, groups)])
-        print(results)
+        # print(results)
         img = get_metric_image(results)
         img.save('static/images/KMeans_metrics.png')
 
