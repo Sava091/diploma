@@ -24,15 +24,18 @@ PCA_FN = 'pca_model.npy' # model
 SCALER_FN = 'scaler_model.npy' # model
 CLUSTER_COLOURS = ['green', 'yellow', 'orange', 'brown', 'red', 'aqua', 'purple']
 METRIC_GROUP_MAX = 10 # max groups
+MATRIX_LIST_FN = 'rr_matrixes.npy'
 
 
 def save_bin(bin, fn):
+    # сохранение бинораного файла
     fp = open(fn,'w')
     fp.write(bin)
     fp.close()
 
 
 def save_temp(content, dir, prefix, suffix):
+    # сохранение временного файла полученного из интернет
     tf = tempfile.NamedTemporaryFile(delete=False, dir=dir, prefix=prefix, suffix=suffix)
     tf.write(content)
     tf.flush()
@@ -40,6 +43,7 @@ def save_temp(content, dir, prefix, suffix):
 
 
 def rr_reader(filename):
+    # читаем .rr формат записи ЕКГ
     fp = open(filename,'rb')
     hd = fp.read(21)
     rr = fp.read(2)
@@ -54,6 +58,7 @@ def rr_reader(filename):
 
 
 def beat_reader(filename):
+    # читаем .beat формат записи ЕКГ
     fp = codecs.open(filename,'r', 'WINDOWS-1251')
     array_rr = []
     s1 = fp.readline()
@@ -76,11 +81,13 @@ def beat_reader(filename):
 
 
 def ratio_to_cell(t1, t2):
+    # Вычисялем номер ячейки в матрице тепловой карты по данным RR1 и RR2
     r = max(100, t1) / max(100, t2)
     return int(round((r - R_MIN)/(R_MAX-R_MIN) * N_CELLS))
 
 
 def fill_rr_matrix(array_rr):
+    # заполняем матрицу тепловой карты
     rr_matrix = np.zeros((N_CELLS, N_CELLS), dtype=int)
     for x,y,z in zip(array_rr[:-2], array_rr[1:-1], array_rr[2:]):
         i,j = ratio_to_cell(x,y), ratio_to_cell(y,z)
@@ -90,13 +97,15 @@ def fill_rr_matrix(array_rr):
     return rr_matrix
 
 
-def log_rr_matrix(rr_matrix, divider = 100):
+def log_rr_matrix(rr_matrix, divider=100):
+    # логнормализация данных натуральным логарифмом
     def log_rr(rri):
         return np.log((rri + 1)/divider)
     return np.vectorize(log_rr)(rr_matrix)
 
 
 def norm_rr_matrix(rr_matrix, n_scale=N_RANGES):
+    # нормализация данных
     s = rr_matrix.shape
     rr_array = rr_matrix.reshape((s[0] * s[1]))
     m = rr_array.max()
@@ -106,6 +115,7 @@ def norm_rr_matrix(rr_matrix, n_scale=N_RANGES):
 
 
 def load_rr_matrix(fn):
+    # считываем файл экспорта данных ЕКГ в формате .rr
     array_rr = rr_reader(fn)
     matrix_rr = fill_rr_matrix(array_rr)
     log_matrix_rr = log_rr_matrix(matrix_rr)
@@ -114,49 +124,63 @@ def load_rr_matrix(fn):
 
 
 def load_beat_matrix(fn, min_beats=1000):
+    # считываем файл экспорта данных ЕКГ в формате .beat
     array_rr = beat_reader(fn)
+    # (проверка) Если данных недостаточно для расчета завершаем работу функции
     if len(array_rr) < min_beats: return None
+
+    # расчитываем скатерограмму
     matrix_rr = fill_rr_matrix(array_rr)
+
+    # Логнормалызация данных
     log_matrix_rr = log_rr_matrix(matrix_rr)
     # norm_matrix_rr = norm_rr_matrix(log_matrix_rr)
     return log_matrix_rr
 
 
 def store_matrix_list(matrix_list, path):
-    np.save(os.path.join(path, 'rr_matrixes.npy'), np.array(matrix_list))
+    # сохраняем набор импортированных скатерограмм для поледующей более быстрой обработки
+    np.save(os.path.join(path, MATRIX_LIST_FN), np.array(matrix_list))
 
 
 def store_heatmap(rr_matrix, path, fn):
-    np.save(os.path.join(path, fn), rr_matrix)
+    # сохраняем тепловую карту скатерограммы
+    np.save(os.path.join(path, fn), rr_matrix, allow_pickle=True)
 
 
 def store_model(model, path, fn):
+    # сохраняем модель любого типа(модель масштабируемого преобразования, модель гланвых компонент, и модель кластеризации)
     fp = open(os.path.join(path, fn), 'wb')
     pickle.dump(model, fp)
 
 
 def load_model(path, fn):
+    # загружаем модель любого типа(модель масштабируемого преобразования, модель гланвых компонент, и модель кластеризации)
     fp = open(os.path.join(path, fn), 'rb')
     model = pickle.load(fp)
     return model
 
 
 def load_matrix_list(path):
-    matrix_list = np.load(os.path.join(path, 'rr_matrixes.npy'))
+    # загружаем набор импортированных скатерограмм для поледующей более быстрой обработки
+    matrix_list = np.load(os.path.join(path, MATRIX_LIST_FN))
     return matrix_list
 
 
 def load_heatmap(path, fn):
-    rr_matrix = np.load(os.path.join(path, fn))
+    # загружаем тепловую карту скатерограммы
+    rr_matrix = np.load(os.path.join(path, fn), allow_pickle=True)
     return rr_matrix
 
 
 def get_matrix_list_count(path):
+    # определяем кол-во скатерограмм в базе
     matrix_list = load_matrix_list(path)
     return matrix_list.shape[0]
 
 
 def snail(m):
+    # преобразуем двумерную тепловую карту в одномерный массив методикой кругового обхода(улиткообразно)
     w, h = m.shape
     w2, h2 = w//2, h//2
     x, y = w2+1, h2+1
@@ -179,6 +203,7 @@ def snail(m):
 
 
 def snail_map(w=N_CELLS, h=N_CELLS):
+    # карта кругового обхода(для быстрого выполнения преобразования)
     s = list()
     y1,x1 = 0, 0
     y2,x2 = h-1, w-1
@@ -203,12 +228,14 @@ def reshape(m):
 
 
 def get_x_for_pca(matrix_list):
+    # подготавливаем данные для расчета методикой главных компонент
     s_map = snail_map(N_CELLS, N_CELLS)
     # print(s_map)
     return np.array([[m[i, j] for i, j in s_map] for m in matrix_list])
 
 
 def pca_fit(x, n_components =2):
+    # расчитываем модель методики главных компонент
     scaler = StandardScaler()
     scaler.fit(x)
     x_norm = scaler.transform(x)
@@ -218,6 +245,7 @@ def pca_fit(x, n_components =2):
 
 
 def pca_transform(scaler, pca, x):
+    # делаем преобразование скатерограмм в пространство факторов
     x_norm = scaler.transform(x)
     pc_x = pca.transform(x_norm)
     return pc_x
@@ -230,30 +258,29 @@ def clustering(pc_x, n_clusters=N_CLUSTERS):
 
 
 def predict_cluster(model, pc_x):
+    # разбиваем на группы скатерограммы в пространстве факторов
     return model.predict(pc_x)
 
 
 def group_metric(pc_x, groups):
+    # вычисляем метрику silhouette для определения оптимального кол-ва групп кластеризации
     return silhouette_score(pc_x, groups)
 
 
 def make_group_map(range1, range2):
+    # формируем данные для карты расположения групп расчитанных методикой кластеризации
     return np.array([(pc1, pc2) for pc1 in range(range1[0], range1[1]) for pc2 in range(range2[0], range2[1])])
 
 
 def get_heatmap_image(norm_matrix_rr):
-    # df_matrix = pd.DataFrame(norm_matrix_rr, columns=np.linspace(R_MIN, R_MAX, N_CELLS))
+    # вычисляем тепловую карту скатерограммы RR-интервалов записи ЕКГ
     scale_rr = np.arange(0.25, R_MAX, 0.25)
-    # scale_rr_rev = np.arange(R_MAX, 0.25, -0.25)
     svm = sn.heatmap(norm_matrix_rr, cmap='coolwarm', center=0, xticklabels=False, yticklabels=False)  # linecolor='white', linewidths=1,
     svm.invert_yaxis()
     ax2 = svm.twiny()
     ax2.xaxis.set_ticks_position('bottom')
     ax2.set_xlim(R_MIN, R_MAX)
     ax2.set_xticks(scale_rr)
-    # ax3 = svm.twiny()
-    # ax3.set_ylim(R_MIN, R_MAX)
-    # ax3.set_yticks(scale_rr)
     figure = svm.get_figure()
     figure_data = BytesIO()
     figure.savefig(figure_data, dpi=120)
@@ -263,11 +290,11 @@ def get_heatmap_image(norm_matrix_rr):
 
 
 def get_metric_image(metrix):
+    # формируем визуализацию метрики Silhouette для различного кол-ва групп кластеризации
     groups = np.array([g for g, m in metrix])
     ms = np.array([m for g, m in metrix])
     df = pd.DataFrame(ms, columns=['metrics'])
     df.index = groups
-    # print(df.head(10))
     svm = sn.barplot(x=groups, y=ms)
     svm.set_xlabel('N groups')
     svm.set_ylabel('metric value')
@@ -282,6 +309,7 @@ def get_metric_image(metrix):
 
 
 def get_clustermap_image(path, norm_matrix_rr):
+    # формируем изображение карты групп
     pc_x = make_group_map((-30, 130), (-40, 130))
     cluster = load_model(path, CLUSTER_FN)
     pca = load_model(path, PCA_FN)
@@ -291,12 +319,9 @@ def get_clustermap_image(path, norm_matrix_rr):
     pc_point = pca_transform(scaler, pca, x_point)
     colours = [CLUSTER_COLOURS[g] for g in groups]
     x,y = pc_x[:, 0], pc_x[:, 1]
-    # df = pd.DataFrame(np.array((x, y, colours)).transpose(), columns=['pc1', 'pc2', 'colours'])
-    # print(df.head())
     ax = plt.gca()
     ax.scatter(x=x, y=y, s=60, alpha=0.5, c=colours)
     ax.scatter(x=pc_point[:,0], y=pc_point[:,1], s=80, alpha=1, c=['black'])
-    # print(pc_point)
     ax.grid()
     plt.xlabel('principal component 1')
     plt.ylabel('principal component 2')

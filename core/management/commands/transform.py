@@ -21,6 +21,7 @@ class Command(BaseCommand):
         parser.add_argument('-type', type=str, help='Transform types: map | groups | opt', default = 'map')
 
     def transform_groups(self, path):
+        # расчитываем типичные тепловые карты для каждой из групп
         matrix_list = load_matrix_list(path)
         x_for_pca = get_x_for_pca(matrix_list)
         pc_x = pca_transform(x_for_pca)
@@ -29,36 +30,23 @@ class Command(BaseCommand):
         pc1 = [p[0] for p in pc_x]
         pc2 = [p[1] for p in pc_x]
         d = np.array([pc1, pc2, groups]).transpose()
-        # print(d)
         df = pd.DataFrame(d, columns=['PC1','PC2', 'group'])
-        # print(df.head())
         for i in range(0, N_CLUSTERS):
             dfi = df[df['group'] == i]
             mi = dfi.mean()
-            # print(mi)
             pc1i, pc2i = mi.loc['PC1'], mi.loc['PC2']
             dfi['DI'] = np.array([get_di(row, pc1i, pc2i) for i, row in dfi.iterrows()])
-            # print(dfi.head())
             dfm = dfi[dfi['DI'] == dfi['DI'].min()]
             n_best = dfm.index[0]
-            # print(n_best)
             norm_matrix_rr = matrix_list[n_best]
             img = get_heatmap_image(norm_matrix_rr)
             img.save('static/images/KMeans_group{}.png'.format(i))
-        # grouped_data = [pc_x[groups == g] for g in range(0, N_CLUSTERS)]
-        # print(grouped_data)
-        # means = [grouped_data[i].mean() for i in range(0, N_CLUSTERS)]
-        # print(means)
 
     def transform_map(self, path):
-        # matrix_list = load_matrix_list(path)
-        # x_for_pca = get_x_for_pca(matrix_list)
-        # pc_x = pca_transform(x_for_pca)
-        # print(pc_x)
+        # формируем карту расположения групп расчитанных методикой кластеризации
         pc_x = make_group_map((-30, 130), (-40, 130))
         model = load_model(path, MODEL_FN)
         groups = predict_cluster(model, pc_x)
-        # print(groups)
         colours = [CLUSTER_COLOURS[g] for g in groups]
         ax = plt.gca()
         ax.scatter(x=pc_x[:, 0], y=pc_x[:, 1], s=60, alpha=0.5, c=colours)
@@ -68,9 +56,9 @@ class Command(BaseCommand):
         plt.title('KMean Clustering')
         figure = ax.get_figure()
         figure.savefig('static/images/KMeans_Cluster.png', dpi=200)
-        # plt.show()
 
     def transform_opt(self, path):
+        # вычисляем оптимальное кол-во групп кластеризации при помощи метрики Silhouette
         matrix_list = load_matrix_list(path)
         x_for_pca = get_x_for_pca(matrix_list)
         pc_x = pca_transform(x_for_pca)
@@ -85,6 +73,10 @@ class Command(BaseCommand):
         img.save('static/images/KMeans_metrics.png')
 
     def handle(self, *args, **options):
+        # в зависимости от опции type запускаем одну из трёх функций расчета
+        # 1 типичные тепловые карты
+        # 2 карта расположения групп
+        # 3 оптимальное кол-во групп
         path = os.path.join(settings.BASE_DIR, 'samples')
         transform_type = options.get('type')
         if transform_type == 'map':
